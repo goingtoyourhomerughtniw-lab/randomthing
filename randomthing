@@ -1,0 +1,311 @@
+-- Gui to Lua
+-- Version: 3.2
+
+-- Instances:
+
+local ScreenGui = Instance.new("ScreenGui")
+
+--Properties:
+
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Scripts:
+
+local function IFUTB_fake_script() -- ScreenGui.LocalScript 
+	local script = Instance.new('LocalScript', ScreenGui)
+
+	local player = game.Players.LocalPlayer
+	local UIS = game:GetService("UserInputService")
+	local RunService = game:GetService("RunService")
+	local ContextActionService = game:GetService("ContextActionService")
+	
+	local character = player.Character or player.CharacterAdded:Wait()
+	local root = character:WaitForChild("HumanoidRootPart")
+	local humanoid = character:WaitForChild("Humanoid")
+	
+	-- GUI
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "AstromoHub"
+	gui.Parent = player:WaitForChild("PlayerGui")
+	
+	-- Main Frame
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(0,340,0,300)
+	frame.Position = UDim2.new(0.5,-170,0.5,-150)
+	frame.BackgroundColor3 = Color3.fromRGB(20,20,25)
+	frame.Visible = false
+	frame.Active = true
+	frame.Draggable = true
+	frame.Parent = gui
+	Instance.new("UICorner",frame)
+	
+	-- Rainbow Glow
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 3
+	stroke.Parent = frame
+	
+	RunService.RenderStepped:Connect(function()
+		stroke.Color = Color3.fromHSV(tick()%5/5,1,1)
+	end)
+	
+	-- Title
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1,0,0,35)
+	title.BackgroundTransparency = 1
+	title.Text = "Astromo Hub"
+	title.Font = Enum.Font.GothamBold
+	title.TextSize = 20
+	title.TextColor3 = Color3.new(1,1,1)
+	title.Parent = frame
+	
+	-- Tabs
+	local tabFrame = Instance.new("Frame")
+	tabFrame.Size = UDim2.new(1,0,0,35)
+	tabFrame.Position = UDim2.new(0,0,0,35)
+	tabFrame.BackgroundTransparency = 1
+	tabFrame.Parent = frame
+	
+	local function makeTab(name,pos)
+		local b = Instance.new("TextButton")
+		b.Size = UDim2.new(0.25,0,1,0)
+		b.Position = pos
+		b.Text = name
+		b.Font = Enum.Font.GothamBold
+		b.BackgroundColor3 = Color3.fromRGB(35,35,40)
+		b.TextColor3 = Color3.new(1,1,1)
+		b.Parent = tabFrame
+		Instance.new("UICorner",b)
+		return b
+	end
+	
+	local playerTab = makeTab("Player",UDim2.new(0,0,0,0))
+	local gravityTab = makeTab("Gravity",UDim2.new(0.25,0,0,0))
+	local exploitsTab = makeTab("Exploits",UDim2.new(0.5,0,0,0))
+	local tpTab = makeTab("Teleport",UDim2.new(0.75,0,0,0))
+	
+	-- Pages
+	local function makePage()
+		local p = Instance.new("Frame")
+		p.Size = UDim2.new(1,0,1,-70)
+		p.Position = UDim2.new(0,0,0,70)
+		p.BackgroundTransparency = 1
+		p.Parent = frame
+		return p
+	end
+	
+	local playerPage = makePage()
+	local gravityPage = makePage()
+	local exploitsPage = makePage()
+	local tpPage = makePage()
+	
+	gravityPage.Visible=false
+	exploitsPage.Visible=false
+	tpPage.Visible=false
+	
+	-- UI creators
+	local function makeBox(text,pos,parent)
+		local b = Instance.new("TextBox")
+		b.Size = UDim2.new(0,280,0,35)
+		b.Position = pos
+		b.PlaceholderText = text
+		b.BackgroundColor3 = Color3.fromRGB(35,35,45)
+		b.TextColor3 = Color3.new(1,1,1)
+		b.Font = Enum.Font.Gotham
+		b.Parent = parent
+		Instance.new("UICorner",b)
+		return b
+	end
+	
+	local function makeButton(text,pos,parent)
+		local b = Instance.new("TextButton")
+		b.Size = UDim2.new(0,280,0,35)
+		b.Position = pos
+		b.Text = text
+		b.BackgroundColor3 = Color3.fromRGB(80,120,255)
+		b.TextColor3 = Color3.new(1,1,1)
+		b.Font = Enum.Font.GothamBold
+		b.Parent = parent
+		Instance.new("UICorner",b)
+		return b
+	end
+	
+	-- PLAYER PAGE
+	local speedBox = makeBox("WalkSpeed",UDim2.new(0.5,-140,0,10),playerPage)
+	local jumpBox = makeBox("JumpPower",UDim2.new(0.5,-140,0,50),playerPage)
+	
+	local applyPlayer = makeButton("Apply Player Settings",UDim2.new(0.5,-140,0,90),playerPage)
+	
+	local resetKeyBox = makeBox("Reset Keybind (Example: R)",UDim2.new(0.5,-140,0,130),playerPage)
+	local bindReset = makeButton("Bind Reset Key",UDim2.new(0.5,-140,0,170),playerPage)
+	
+	-- GRAVITY PAGE
+	local gravityBox = makeBox("Gravity",UDim2.new(0.5,-140,0,10),gravityPage)
+	local applyGravity = makeButton("Apply Gravity",UDim2.new(0.5,-140,0,50),gravityPage)
+	
+	-- EXPLOITS PAGE
+	local superSpeed = makeButton("Super Speed",UDim2.new(0.5,-140,0,10),exploitsPage)
+	local moonGravity = makeButton("Moon Gravity",UDim2.new(0.5,-140,0,50),exploitsPage)
+	local flyBtn = makeButton("Toggle Fly",UDim2.new(0.5,-140,0,90),exploitsPage)
+	local noclipBtn = makeButton("Toggle Noclip",UDim2.new(0.5,-140,0,130),exploitsPage)
+	local infJumpBtn = makeButton("Toggle Infinite Jump",UDim2.new(0.5,-140,0,170),exploitsPage)
+	
+	-- TELEPORT PAGE
+	local tpSpawn = makeButton("Teleport To Spawn",UDim2.new(0.5,-140,0,10),tpPage)
+	
+	-- PLAYER SETTINGS
+	applyPlayer.MouseButton1Click:Connect(function()
+		if humanoid then
+			local s=tonumber(speedBox.Text)
+			local j=tonumber(jumpBox.Text)
+			if s then humanoid.WalkSpeed=s end
+			if j then humanoid.JumpPower=j end
+		end
+	end)
+	
+	-- GRAVITY
+	applyGravity.MouseButton1Click:Connect(function()
+		local g=tonumber(gravityBox.Text)
+		if g then workspace.Gravity=g end
+	end)
+	
+	-- EXPLOITS
+	superSpeed.MouseButton1Click:Connect(function()
+		if humanoid then humanoid.WalkSpeed=120 end
+	end)
+	
+	moonGravity.MouseButton1Click:Connect(function()
+		workspace.Gravity=50
+	end)
+	
+	-- FLY IMPLEMENTATION
+	local flying = false
+	local flySpeed = 50
+	local flyDirection = Vector3.new(0,0,0)
+	local keys = {W=false,A=false,S=false,D=false,Space=false,LeftShift=false}
+	
+	local function updateFly()
+		if flying then
+			local cf = root.CFrame
+			local move = Vector3.new(0,0,0)
+			if keys.W then move = move + cf.LookVector end
+			if keys.S then move = move - cf.LookVector end
+			if keys.A then move = move - cf.RightVector end
+			if keys.D then move = move + cf.RightVector end
+			if keys.Space then move = move + Vector3.new(0,1,0) end
+			if keys.LeftShift then move = move - Vector3.new(0,1,0) end
+			root.Velocity = move.Unit*flySpeed
+		end
+	end
+	
+	flyBtn.MouseButton1Click:Connect(function()
+		flying = not flying
+		if flying then
+			humanoid.PlatformStand=true
+		else
+			humanoid.PlatformStand=false
+			root.Velocity=Vector3.new(0,0,0)
+		end
+	end)
+	
+	UIS.InputBegan:Connect(function(input,gpe)
+		if input.UserInputType==Enum.UserInputType.Keyboard then
+			if keys[input.KeyCode.Name] ~= nil then keys[input.KeyCode.Name]=true end
+		end
+	end)
+	
+	UIS.InputEnded:Connect(function(input,gpe)
+		if input.UserInputType==Enum.UserInputType.Keyboard then
+			if keys[input.KeyCode.Name] ~= nil then keys[input.KeyCode.Name]=false end
+		end
+	end)
+	
+	RunService.RenderStepped:Connect(function()
+		if flying then updateFly() end
+	end)
+	
+	-- NOCLIP
+	local noclip=false
+	noclipBtn.MouseButton1Click:Connect(function()
+		noclip=not noclip
+	end)
+	
+	RunService.Stepped:Connect(function()
+		if noclip then
+			for _,v in pairs(character:GetDescendants()) do
+				if v:IsA("BasePart") then
+					v.CanCollide=false
+				end
+			end
+		end
+	end)
+	
+	-- INFINITE JUMP
+	local infJump=false
+	infJumpBtn.MouseButton1Click:Connect(function()
+		infJump=not infJump
+	end)
+	
+	UIS.JumpRequest:Connect(function()
+		if infJump then humanoid:ChangeState("Jumping") end
+	end)
+	
+	-- TELEPORT
+	tpSpawn.MouseButton1Click:Connect(function()
+		local spawn=workspace:FindFirstChildWhichIsA("SpawnLocation")
+		if spawn then
+			character:MoveTo(spawn.Position)
+		end
+	end)
+	
+	-- RESET KEY
+	local resetKey=nil
+	bindReset.MouseButton1Click:Connect(function()
+		local key=resetKeyBox.Text:upper()
+		local success,enum=pcall(function() return Enum.KeyCode[key] end)
+		if success then resetKey=enum end
+	end)
+	
+	-- TAB SWITCHING
+	playerTab.MouseButton1Click:Connect(function()
+		playerPage.Visible=true
+		gravityPage.Visible=false
+		exploitsPage.Visible=false
+		tpPage.Visible=false
+	end)
+	
+	gravityTab.MouseButton1Click:Connect(function()
+		playerPage.Visible=false
+		gravityPage.Visible=true
+		exploitsPage.Visible=false
+		tpPage.Visible=false
+	end)
+	
+	exploitsTab.MouseButton1Click:Connect(function()
+		playerPage.Visible=false
+		gravityPage.Visible=false
+		exploitsPage.Visible=true
+		tpPage.Visible=false
+	end)
+	
+	tpTab.MouseButton1Click:Connect(function()
+		playerPage.Visible=false
+		gravityPage.Visible=false
+		exploitsPage.Visible=false
+		tpPage.Visible=true
+	end)
+	
+	-- INPUT
+	UIS.InputBegan:Connect(function(input,processed)
+		if processed then return end
+	
+		if input.KeyCode==Enum.KeyCode.RightShift then
+			frame.Visible = not frame.Visible
+		end
+	
+		if resetKey and input.KeyCode==resetKey then
+			humanoid.Health=0
+		end
+	end)
+end
+coroutine.wrap(IFUTB_fake_script)()
