@@ -1,0 +1,296 @@
+-- Vinxy Hub - Steal a Brainrot (Fixed Sliders + Clean Layout)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = workspace
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "VinxyHub"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 380, 0, 580)
+mainFrame.Position = UDim2.new(0.5, -190, 0.5, -290)
+mainFrame.BackgroundColor3 = Color3.fromRGB(13, 13, 18)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 20)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(0, 255, 170)
+stroke.Thickness = 2
+stroke.Parent = mainFrame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 65)
+title.BackgroundTransparency = 1
+title.Text = "VINXY HUB"
+title.TextColor3 = Color3.fromRGB(0, 255, 170)
+title.TextScaled = true
+title.Font = Enum.Font.GothamBlack
+title.Parent = mainFrame
+
+spawn(function()
+    while title.Parent do
+        TweenService:Create(title, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), 
+        {TextColor3 = Color3.fromRGB(120, 255, 210)}):Play()
+        task.wait(3)
+    end
+end)
+
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(1, 0, 0, 20)
+subtitle.Position = UDim2.new(0, 0, 0, 60)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "Sliders • Keybinds"
+subtitle.TextColor3 = Color3.fromRGB(110, 110, 130)
+subtitle.TextScaled = true
+subtitle.Font = Enum.Font.Gotham
+subtitle.Parent = mainFrame
+
+-- Variables
+local antiRagdollEnabled = true
+local speedEnabled = false
+local jumpEnabled = false
+local hitboxEnabled = false
+local fpsBoostEnabled = false
+
+local speedValue = 30.1
+local jumpValue = 0
+local hitboxSize = 8
+
+local function notify(text)
+    StarterGui:SetCore("SendNotification", {Title = "Vinxy Hub", Text = text, Duration = 2})
+end
+
+local function createToggle(name, yPos, default, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -40, 0, 48)
+    frame.Position = UDim2.new(0, 20, 0, yPos)
+    frame.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+    frame.Parent = mainFrame
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = name
+    label.TextColor3 = Color3.fromRGB(235, 235, 235)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Font = Enum.Font.GothamSemibold
+    label.TextScaled = true
+    label.Parent = frame
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 85, 0, 32)
+    btn.Position = UDim2.new(1, -105, 0.5, -16)
+    btn.BackgroundColor3 = default and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(55, 55, 60)
+    btn.Text = default and "ON" or "OFF"
+    btn.TextColor3 = Color3.fromRGB(0,0,0)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextScaled = true
+    btn.Parent = frame
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
+
+    local state = default
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        btn.BackgroundColor3 = state and Color3.fromRGB(0, 255, 170) or Color3.fromRGB(55, 55, 60)
+        btn.Text = state and "ON" or "OFF"
+        callback(state)
+    end)
+end
+
+createToggle("Anti Ragdoll", 95, true, function(v) antiRagdollEnabled = v end)
+createToggle("Speed Boost", 150, false, function(v) speedEnabled = v end)
+createToggle("Jump Boost", 205, false, function(v) jumpEnabled = v end)
+createToggle("Hitbox Expander", 260, false, function(v) hitboxEnabled = v end)
+createToggle("FPS Booster", 315, false, function(v) fpsBoostEnabled = v end)
+
+-- Slider Function
+local function createSlider(name, yPos, minVal, maxVal, defaultVal, callback)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -40, 0, 68)
+    frame.Position = UDim2.new(0, 20, 0, yPos)
+    frame.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+    frame.Parent = mainFrame
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -20, 0, 22)
+    label.Position = UDim2.new(0, 10, 0, 8)
+    label.BackgroundTransparency = 1
+    label.Text = name .. ": " .. defaultVal
+    label.TextColor3 = Color3.fromRGB(200, 200, 210)
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Font = Enum.Font.GothamSemibold
+    label.TextScaled = true
+    label.Parent = frame
+
+    local bar = Instance.new("Frame")
+    bar.Size = UDim2.new(1, -30, 0, 10)
+    bar.Position = UDim2.new(0, 15, 0, 38)
+    bar.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+    bar.Parent = frame
+    Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 5)
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((defaultVal - minVal) / (maxVal - minVal), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(0, 255, 170)
+    fill.Parent = bar
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 5)
+
+    local knob = Instance.new("TextButton")
+    knob.Size = UDim2.new(0, 20, 0, 20)
+    knob.Position = UDim2.new((defaultVal - minVal) / (maxVal - minVal), -10, 0.5, -10)
+    knob.BackgroundColor3 = Color3.fromRGB(0, 255, 170)
+    knob.Text = ""
+    knob.Parent = bar
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1,0)
+
+    local value = defaultVal
+    local dragging = false
+
+    knob.MouseButton1Down:Connect(function() dragging = true end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+
+    RunService.RenderStepped:Connect(function()
+        if dragging then
+            local mouseX = UserInputService:GetMouseLocation().X
+            local barX = bar.AbsolutePosition.X
+            local barWidth = bar.AbsoluteSize.X
+            local percent = math.clamp((mouseX - barX) / barWidth, 0, 1)
+            value = math.floor(minVal + percent * (maxVal - minVal) * 10) / 10
+
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            knob.Position = UDim2.new(percent, -10, 0.5, -10)
+            label.Text = name .. ": " .. value
+            callback(value)
+        end
+    end)
+end
+
+-- Sliders (Fitted)
+createSlider("Speed Value", 380, 16, 120, speedValue, function(v) speedValue = v end)
+createSlider("Jump Value", 455, 0, 300, jumpValue, function(v) jumpValue = v end)
+createSlider("Hitbox Size", 530, 2, 25, hitboxSize, function(v) hitboxSize = v end)
+
+-- Close Button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 40, 0, 40)
+closeBtn.Position = UDim2.new(1, -50, 0, 12)
+closeBtn.BackgroundTransparency = 1
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.fromRGB(255, 90, 90)
+closeBtn.TextScaled = true
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.Parent = mainFrame
+
+closeBtn.MouseButton1Click:Connect(function()
+    TweenService:Create(mainFrame, TweenInfo.new(0.4), {Size = UDim2.new(0,0,0,0)}):Play()
+    task.wait(0.4)
+    screenGui:Destroy()
+end)
+
+-- Load Animation
+mainFrame.Size = UDim2.new(0,0,0,0)
+TweenService:Create(mainFrame, TweenInfo.new(0.7, Enum.EasingStyle.Back), {Size = UDim2.new(0,380,0,580)}):Play()
+
+-- Keybinds
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.F then speedEnabled = not speedEnabled; notify("Speed: "..(speedEnabled and "ON" or "OFF"))
+    elseif input.KeyCode == Enum.KeyCode.G then jumpEnabled = not jumpEnabled; notify("Jump: "..(jumpEnabled and "ON" or "OFF"))
+    elseif input.KeyCode == Enum.KeyCode.H then hitboxEnabled = not hitboxEnabled; notify("Hitbox: "..(hitboxEnabled and "ON" or "OFF"))
+    elseif input.KeyCode == Enum.KeyCode.B then fpsBoostEnabled = not fpsBoostEnabled; notify("FPS Booster: "..(fpsBoostEnabled and "ON" or "OFF"))
+    elseif input.KeyCode == Enum.KeyCode.R then antiRagdollEnabled = not antiRagdollEnabled; notify("Anti Ragdoll: "..(antiRagdollEnabled and "ON" or "OFF"))
+    end
+end)
+
+-- Features (same as before)
+spawn(function()
+    while true do task.wait(0.1)
+        if antiRagdollEnabled then
+            local char = player.Character
+            if char then
+                local hum = char:FindFirstChild("Humanoid")
+                if hum then hum.PlatformStand = false; hum.Sit = false; hum:ChangeState(Enum.HumanoidStateType.Running) end
+            end
+        end
+    end
+end)
+
+spawn(function()
+    while true do task.wait(0.08)
+        local char = player.Character
+        if char then
+            local hum = char:FindFirstChild("Humanoid")
+            if hum then
+                hum.WalkSpeed = speedEnabled and speedValue or 16
+                hum.JumpPower = jumpEnabled and jumpValue or 50
+            end
+        end
+    end
+end)
+
+spawn(function()
+    while true do task.wait(0.25)
+        if hitboxEnabled then
+            local char = player.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                local root = char.HumanoidRootPart
+                root.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
+                root.Transparency = 0.7
+                root.CanCollide = false
+            end
+        end
+    end
+end)
+
+local function applyFPSBoost(enable)
+    if enable then
+        Lighting.Sky = nil
+        local blackSky = Instance.new("Sky")
+        blackSky.SkyboxBk = "rbxassetid://600830446"
+        blackSky.SkyboxDn = "rbxassetid://600830446"
+        blackSky.SkyboxFt = "rbxassetid://600830446"
+        blackSky.SkyboxLf = "rbxassetid://600830446"
+        blackSky.SkyboxRt = "rbxassetid://600830446"
+        blackSky.SkyboxUp = "rbxassetid://600830446"
+        blackSky.Parent = Lighting
+        Lighting.Ambient = Color3.fromRGB(0,0,0)
+        Lighting.Brightness = 0.3
+        Lighting.GlobalShadows = false
+    else
+        Lighting.GlobalShadows = true
+        Lighting.Brightness = 1
+        Lighting.Ambient = Color3.fromRGB(0.5,0.5,0.5)
+    end
+end
+
+spawn(function()
+    while true do
+        task.wait(1)
+        applyFPSBoost(fpsBoostEnabled)
+    end
+end)
+
+StarterGui:SetCore("SendNotification", {
+    Title = "✅ Vinxy Hub",
+    Text = "Sliders fixed & fitted!\nF=Speed | G=Jump | H=Hitbox | B=FPS | R=Anti Ragdoll",
+    Duration = 8
+})
+
+print("🧠 Vinxy Hub Loaded with Fixed Sliders!")
